@@ -2,11 +2,10 @@
 /******************      CONFIGURAZIONE      ******************/
 /****************************************************************/
 
-// IMPORTANTE: Incolla qui l'URL della tua Web App di Google Apps Script
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxl6J3fKWlJCHOYjAM_XsZ1dYVPsJTA0VEqDDOogVZy4ba4YDzDhk4dk3aURaiiIdrh/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxl6J3fKWlJCHOYjAM_XsZ1dYVPsJTA0VEqDDOogVZy4ba4YDzDhk4dk3aURaiiIdrh/exec"; // INCOLLA QUI L'URL DELLA TUA NUOVA APP WEB
 
-// Variabile per memorizzare il token di sessione dopo il login
 let sessionToken = null;
+let appData = null; // Conterrà tutti i dati dei fogli dopo il login
 
 /****************************************************************/
 /******************      LOGICA DI LOGIN      ******************/
@@ -39,15 +38,19 @@ async function handleLogin() {
   loginButton.disabled = true;
 
   try {
-    // L'azione di login non richiede un token
-    const result = await callAppsScript('login', { password: password });
+    const loginResult = await callAppsScript('login', { password: password });
     
-    if (result.token) {
-      sessionToken = result.token;
+    if (loginResult.token) {
+      sessionToken = loginResult.token;
+      
+      loginMessage.textContent = 'Caricamento dati iniziali...';
+      // Chiamata unica per pre-caricare tutti i dati
+      appData = await callAppsScript('getTuttiDatiIniziali');
+
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('main-container').style.display = 'block';
-      // Ora che siamo loggati, carichiamo i dati iniziali
-      updateDashboard();
+      
+      updateDashboard(); // Aggiorna le statistiche usando i dati pre-caricati
     } else {
       throw new Error('Token di sessione non ricevuto.');
     }
@@ -63,17 +66,16 @@ async function handleLogin() {
 /******************      LOGICA PRINCIPALE      ******************/
 /****************************************************************/
 
-// Funzione centrale per chiamare il backend
 async function callAppsScript(functionName, payload = {}) {
   const response = await fetch(SCRIPT_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'text/plain;charset=utf-8',
     },
-    body: JSON.stringify({
+    body: JSON.stringify({ 
       action: functionName, 
       data: payload,
-      token: sessionToken // Invia sempre il token di sessione (sarà null al login)
+      token: sessionToken
     }),
     mode: 'cors',
   });
@@ -85,36 +87,28 @@ async function callAppsScript(functionName, payload = {}) {
 
   const result = await response.json();
   if (result.error) {
-    // Se l'errore è di autorizzazione, potremmo voler forzare un nuovo login
     if (result.error.includes('Autorizzazione richiesta')) {
         document.getElementById('login-overlay').style.display = 'flex';
         document.getElementById('main-container').style.display = 'none';
+        sessionToken = null;
+        appData = null;
     }
     throw new Error(result.error);
   }
   return result.data;
 }
 
-// ... (tutte le altre funzioni rimangono quasi identiche, ma useranno la nuova callAppsScript)
-
-// Funzioni di utilità per codifica e decodifica Base64
 function b64Encode(str) {
-  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
-    function toSolidBytes(match, p1) {
-      return String.fromCharCode('0x' + p1);
-    }));
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
 }
 
 function b64Decode(str) {
-  return decodeURIComponent(atob(str).split('').map(function (c) {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
+  return decodeURIComponent(atob(str).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
 }
 
-// Funzioni per i pulsanti di azione principali
 async function runAction(functionName) {
   document.querySelectorAll('button').forEach(btn => btn.disabled = true);
-  if (confirm("Sei sicuro di voler avviare l'azione: " + functionName + "?")) {
+  if (confirm(`Sei sicuro di voler avviare l\'azione: ${functionName}?`)) {
     const loader = document.getElementById('loader');
     const resultArea = document.getElementById('result-area');
     loader.style.display = 'block';
@@ -124,6 +118,12 @@ async function runAction(functionName) {
     try {
       const result = await callAppsScript(functionName);
       onSuccess(result);
+      // Dopo un\'azione che modifica i dati, li ricarichiamo tutti
+      resultArea.innerText += '\nAggiornamento dati in corso...';
+      appData = await callAppsScript('getTuttiDatiIniziali');
+      updateDashboard();
+      resultArea.innerText = result + '\nDati aggiornati.';
+
     } catch (error) {
       onFailure(error);
     }
@@ -138,7 +138,7 @@ function onSuccess(result) {
   const resultArea = document.getElementById('result-area');
   resultArea.innerText = result;
   resultArea.style.display = 'block';
-  resultArea.style.backgroundColor = '#28A745'; // Success color
+  resultArea.style.backgroundColor = '#28A745';
   resultArea.style.color = 'white';
 }
 
@@ -146,47 +146,87 @@ function onFailure(error) {
   document.querySelectorAll('button').forEach(btn => btn.disabled = false);
   document.getElementById('loader').style.display = 'none';
   const resultArea = document.getElementById('result-area');
-  resultArea.innerText = 'Si è verificato un errore: ' + error.message;
+  resultArea.innerText = `Si è verificato un errore: ${error.message}`;
   resultArea.style.display = 'block';
-  resultArea.style.backgroundColor = '#EF4444'; // Error color
+  resultArea.style.backgroundColor = '#EF4444';
   resultArea.style.color = 'white';
 }
 
-// Funzioni per la visualizzazione dei fogli
-async function mostraFoglio(functionName) {
-  document.getElementById('loader').style.display = 'block';
-  document.getElementById('foglio-container').style.display = 'none';
+// NUOVA LOGICA ISTANTANEA
+function mostraFoglio(viewName) {
+  if (!appData) {
+    onFailure({ message: "Dati non ancora caricati. Effettua il login." });
+    return;
+  }
+
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('foglio-container').style.display = 'block';
   document.getElementById('result-area').style.display = 'none';
 
-  try {
-    const data = await callAppsScript(functionName);
-    document.getElementById('loader').style.display = 'none';
-    const container = document.getElementById('foglio-container');
-    container.innerHTML = ''; // Clear previous content
+  const container = document.getElementById('foglio-container');
+  container.innerHTML = '';
+  let buttonsHtml = '';
 
-    let buttonsHtml = '';
-    if (functionName === 'eseguiMostraFoglio') {
-      buttonsHtml = `<div class="inline-action-buttons"><button class="management-button" onclick="runAction('eseguiAzioneScarica')">📥 Scarica Nuove Notizie</button><button class="management-button" onclick="runAction('eseguiAzioneElabora')">✨ Elabora Selezionate</button><div class="dropdown-container"><button id="btn-gestisci-fonti" class="management-button" onclick="toggleDropdown()">📡 Gestisci Fonti</button><div id="fonti-dropdown" class="dropdown-panel"><div id="fonti-loader" style="padding: 12px;">Caricamento...</div><ul id="fonti-list"></ul><div class="dropdown-footer"><span id="fonti-status"></span><button id="fonti-save-button" onclick="saveFontiChanges()">Salva</button></div></div></div></div>`;
-      container.innerHTML = buttonsHtml + createTableFoglio1(data);
-    } else if (functionName === 'eseguiMostraFoglio2') {
-      buttonsHtml = `<div class="inline-action-buttons"><button class="management-button" onclick="runAction('eseguiAzioneImmagini')">🖼️ Scarica Link Immagini</button></div>`;
-      container.innerHTML = buttonsHtml + createTableFoglio2(data);
-    } else if (functionName === 'eseguiMostraFoglio3') {
-      container.innerHTML = createTableFoglio3(data);
-    } else if (functionName === 'eseguiMostraFoglioInAttesa') {
-      container.innerHTML = '<div class="table-wrapper-in-attesa">' + createTableFoglioInAttesa(data) + '</div>';
-    }
-
-    container.style.display = 'block';
-  } catch (error) {
-    onFailure(error);
+  switch (viewName) {
+    case 'notizie':
+      buttonsHtml = `<div class=\"inline-action-buttons\"><button class=\"management-button\" onclick=\"runAction('eseguiAzioneScarica')\">📥 Scarica Nuove Notizie</button><button class=\"management-button\" onclick=\"runAction('eseguiAzioneElabora')\">✨ Elabora Selezionate</button><div class=\"dropdown-container\"><button id=\"btn-gestisci-fonti\" class=\"management-button\" onclick=\"toggleDropdown()\">📡 Gestisci Fonti</button><div id=\"fonti-dropdown\" class=\"dropdown-panel\"><div id=\"fonti-loader\" style=\"padding: 12px;\">Caricamento...</div><ul id=\"fonti-list\"></ul><div class=\"dropdown-footer\"><span id=\"fonti-status\"></span><button id=\"fonti-save-button\" onclick=\"saveFontiChanges()\">Salva</button></div></div></div></div>`;
+      container.innerHTML = buttonsHtml + createTableFoglio1(appData.notizie);
+      break;
+    case 'post_ai':
+      buttonsHtml = `<div class=\"inline-action-buttons\"><button class=\"management-button\" onclick=\"runAction('eseguiAzioneImmagini')\">🖼️ Scarica Link Immagini</button></div>`;
+      container.innerHTML = buttonsHtml + createTableFoglio2(appData.post_ai);
+      break;
+    case 'foto':
+      container.innerHTML = createTableFoglio3(appData.foto);
+      break;
+    case 'in_attesa':
+      container.innerHTML = '<div class=\"table-wrapper-in-attesa\">' + createTableFoglioInAttesa(appData.in_attesa) + '</div>';
+      break;
   }
 }
+
+// ... (le funzioni createTable... rimangono quasi identiche)
+// ... (le funzioni di interazione come inviaModifica, etc. rimangono identiche)
+
+// Funzioni per la dashboard (ora usano i dati locali)
+function updateDashboard() {
+  if (!appData) return;
+
+  // Calcola le statistiche dai dati in appData
+  const stats = {
+    notizie: appData.notizie ? appData.notizie.length - 1 : 0,
+    post: appData.post_ai ? appData.post_ai.length - 1 : 0,
+    immagini: appData.foto ? appData.foto.length - 1 : 0,
+    esporta: appData.in_attesa ? appData.in_attesa.length - 1 : 0
+  };
+
+  document.getElementById('stat-notizie').innerText = stats.notizie > 0 ? stats.notizie : 0;
+  document.getElementById('stat-post').innerText = stats.post > 0 ? stats.post : 0;
+  document.getElementById('stat-immagini').innerText = stats.immagini > 0 ? stats.immagini : 0;
+  document.getElementById('stat-esporta').innerText = stats.esporta > 0 ? stats.esporta : 0;
+  
+  const refreshButton = document.getElementById('refresh-dashboard');
+  refreshButton.onclick = async () => {
+      refreshButton.classList.add('loading');
+      refreshButton.disabled = true;
+      try {
+          appData = await callAppsScript('getTuttiDatiIniziali');
+          updateDashboard();
+      } catch (e) {
+          onFailure(e);
+      } finally {
+          refreshButton.classList.remove('loading');
+          refreshButton.disabled = false;
+      }
+  };
+}
+
+// Le altre funzioni (createTable, inviaModifica, etc.) rimangono qui sotto
 
 function createTable(data, renderRow) {
   if (!data || data.length <= 1) {
     const message = (data && data.length > 0 && data[0].length > 0) ? data[0].join(": ") : 'Nessun dato da mostrare.';
-    return `<div class="result-area-inline">${message}</div>`;
+    return `<div class=\"result-area-inline\">${message}</div>`;
   }
   let tableHtml = '<table>';
   const headers = data[0];
@@ -300,7 +340,7 @@ function createTableFoglioInAttesa(data) {
 }
 
 async function confermaEliminaPost(riga) {
-  if (confirm(`Sei sicuro di voler eliminare il post alla riga ${riga}? L'azione è irreversibile.`)) {
+  if (confirm(`Sei sicuro di voler eliminare il post alla riga ${riga}? L\'azione è irreversibile.`)) {
     const rowElement = document.querySelector(`button[data-row-number="${riga}"]`).closest('tr');
     if (rowElement) {
       rowElement.style.opacity = '0.5';
@@ -309,7 +349,9 @@ async function confermaEliminaPost(riga) {
 
     try {
       await callAppsScript('eliminaPostInAttesa', { riga });
-      mostraFoglio('eseguiMostraFoglioInAttesa');
+      appData.in_attesa = appData.in_attesa.filter(row => row[6] !== riga);
+      mostraFoglio('in_attesa');
+      updateDashboard();
     } catch (error) {
       alert('Errore durante l\'eliminazione: ' + error.message);
       if (rowElement) {
@@ -358,6 +400,12 @@ async function salvaModificheFoglio2(riga) {
 
   try {
     await callAppsScript('aggiornaPostFoglio2', { riga, postInstagram, postSlide });
+    // Aggiorna i dati locali
+    const rowIndex = appData.post_ai.findIndex(row => row[0] === riga); // Assumendo che la riga sia il primo elemento
+    if(rowIndex > -1) {
+        appData.post_ai[rowIndex][3] = postInstagram;
+        appData.post_ai[rowIndex][4] = postSlide;
+    }
     statusSpan.innerText = '✅';
     setTimeout(() => { statusSpan.innerText = ''; }, 2000);
   } catch (error) {
@@ -372,6 +420,10 @@ async function inviaModifica(checkboxElement, riga) {
 
   try {
     await callAppsScript('aggiornaStatoNotizia', { riga, stato: nuovoStato });
+    const rowIndex = appData.notizie.findIndex(row => row[0] === riga); // Assumendo che la riga sia il primo elemento
+    if(rowIndex > -1) {
+        appData.notizie[rowIndex][3] = nuovoStato;
+    }
     statusSpan.innerText = '✅';
     setTimeout(() => { statusSpan.innerText = ''; }, 2000);
   } catch (error) {
@@ -458,92 +510,62 @@ function escapeHtml(text) {
   return text.toString().replace(/[&<>"]/g, function (m) { return map[m]; });
 }
 
-async function updateDashboard() {
-  const refreshButton = document.getElementById('refresh-dashboard');
-  if (refreshButton) {
-    refreshButton.classList.add('loading');
-    refreshButton.disabled = true;
+document.getElementById('preview-modal-close-btn').addEventListener('click', closePreviewModal);
+document.getElementById('preview-modal').addEventListener('click', function (event) {
+  if (event.target === this) {
+    closePreviewModal();
   }
+});
+
+document.getElementById('foglio-container').addEventListener('click', function (event) {
+  const previewButton = event.target.closest('.preview-button');
+  if (previewButton) {
+    const data = previewButton.dataset;
+    openPreviewModal(
+      data.titolo,
+      data.testo,
+      data.imageUrl,
+      data.dateValue,
+      data.timeValue,
+      data.rowNumber
+    );
+  }
+});
+
+document.getElementById('modal-schedule-button').addEventListener('click', async function () {
+  const modal = document.getElementById('preview-modal');
+  const rowNumber = modal.dataset.rowNumber;
+  const dateValue = document.getElementById('modal-schedule-date').value;
+  const timeValue = document.getElementById('modal-schedule-time').value;
+
+  const statusSpan = document.getElementById('modal-status');
+  const scheduleButton = document.getElementById('modal-schedule-button');
+
+  if (!rowNumber || !dateValue || !timeValue) {
+    statusSpan.innerText = 'Data e ora sono obbligatorie.';
+    statusSpan.style.color = 'red';
+    return;
+  }
+
+  statusSpan.innerText = 'Programmazione in corso...';
+  statusSpan.style.color = '';
+  scheduleButton.disabled = true;
 
   try {
-    const stats = await callAppsScript('getDashboardStats');
-    document.getElementById('stat-notizie').innerText = stats.notizie;
-    document.getElementById('stat-post').innerText = stats.post;
-    document.getElementById('stat-immagini').innerText = stats.immagini;
-    document.getElementById('stat-esporta').innerText = stats.esporta;
-  } catch (err) {
-    document.getElementById('stat-notizie').innerText = '⚠️';
-    document.getElementById('stat-post').innerText = '⚠️';
-    document.getElementById('stat-immagini').innerText = '⚠️';
-    document.getElementById('stat-esporta').innerText = '⚠️';
-  } finally {
-    if (refreshButton) {
-      refreshButton.classList.remove('loading');
-      refreshButton.disabled = false;
-    }
-  }
-}
-
-// Rimosso l'event listener DOMContentLoaded che chiamava updateDashboard all'inizio.
-// Ora viene chiamato solo dopo un login corretto.
-
-document.addEventListener('DOMContentLoaded', () => {
-  updateDashboard();
-
-  document.getElementById('preview-modal-close-btn').addEventListener('click', closePreviewModal);
-  document.getElementById('preview-modal').addEventListener('click', function (event) {
-    if (event.target === this) {
+    const response = await callAppsScript('programmaPostDaModale', { riga: rowNumber, data: dateValue, ora: timeValue });
+    statusSpan.innerText = '✅ ' + response;
+    scheduleButton.disabled = false;
+    setTimeout(async () => {
       closePreviewModal();
-    }
-  });
-
-  document.getElementById('foglio-container').addEventListener('click', function (event) {
-    const previewButton = event.target.closest('.preview-button');
-    if (previewButton) {
-      const data = previewButton.dataset;
-      openPreviewModal(
-        data.titolo,
-        data.testo,
-        data.imageUrl,
-        data.dateValue,
-        data.timeValue,
-        data.rowNumber
-      );
-    }
-  });
-
-  document.getElementById('modal-schedule-button').addEventListener('click', async function () {
-    const modal = document.getElementById('preview-modal');
-    const rowNumber = modal.dataset.rowNumber;
-    const dateValue = document.getElementById('modal-schedule-date').value;
-    const timeValue = document.getElementById('modal-schedule-time').value;
-
-    const statusSpan = document.getElementById('modal-status');
-    const scheduleButton = document.getElementById('modal-schedule-button');
-
-    if (!rowNumber || !dateValue || !timeValue) {
-      statusSpan.innerText = 'Data e ora sono obbligatorie.';
-      statusSpan.style.color = 'red';
-      return;
-    }
-
-    statusSpan.innerText = 'Programmazione in corso...';
-    statusSpan.style.color = '';
-    scheduleButton.disabled = true;
-
-    try {
-      const response = await callAppsScript('programmaPostDaModale', { riga: rowNumber, data: dateValue, ora: timeValue });
-      statusSpan.innerText = '✅ ' + response;
-      scheduleButton.disabled = false;
-      setTimeout(() => {
-        closePreviewModal();
-        mostraFoglio('eseguiMostraFoglioInAttesa');
-      }, 2000);
-    } catch (error) {
-      statusSpan.innerText = '❌ ' + error.message;
-      scheduleButton.disabled = false;
-    }
-  });
+      // Ricarica solo i dati necessari e aggiorna la vista
+      appData.in_attesa = await callAppsScript('eseguiMostraFoglioInAttesa');
+      mostraFoglio('in_attesa');
+      updateDashboard();
+    }, 2000);
+  } catch (error) {
+    statusSpan.innerText = '❌ ' + error.message;
+    scheduleButton.disabled = false;
+  }
 });
 
 /******************************************************************/
@@ -602,7 +624,7 @@ async function initImageEditor(imageUrl, postTitle, postBody) {
   postBodyPreview.innerHTML = (postBody || '').replace(/\n/g, '<br>');
   textInput.innerHTML = editablePostTitle;
 
-  // NOTA: Qui c'è ancora il bug dell'immagine. Lo risolveremo dopo il login.
+  // NOTA: Qui c\'è ancora il bug dell\'immagine. Lo risolveremo dopo.
   img.crossOrigin = "Anonymous";
   img.src = imageUrl; 
 
@@ -790,7 +812,10 @@ async function initImageEditor(imageUrl, postTitle, postBody) {
       const response = await callAppsScript('_salvaImmagineEPostInAttesa', { immagineBase64: imageData, titolo: finalTitle, testo: finalBody });
       alert(response);
       closeImageEditor();
-      mostraFoglio('eseguiMostraFoglioInAttesa');
+      // Ricarica i dati e aggiorna la vista
+      appData.in_attesa = await callAppsScript('eseguiMostraFoglioInAttesa');
+      mostraFoglio('in_attesa');
+      updateDashboard();
     } catch (error) {
       alert("Errore: " + error.message);
     } finally {
