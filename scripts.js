@@ -3,7 +3,7 @@
 /****************************************************************/
 
 // IMPORTANTE: Incolla qui l'URL della tua Web App di Google Apps Script
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw_RClf2p3aQ2A2YkXJ2sYwYJ-p-gC4g5f6hJkK-eP7tN8X9bQ/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYhrw9ksLT12F6yHEMh_eV2A76XcbZfRGPd4xGx7rwotWRvnvkmFfsQ-hzq3D7-wVO/exec";
 
 /****************************************************************/
 /******************      LOGICA PRINCIPALE      ******************/
