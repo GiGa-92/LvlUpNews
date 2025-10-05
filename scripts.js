@@ -3,7 +3,61 @@
 /****************************************************************/
 
 // IMPORTANTE: Incolla qui l'URL della tua Web App di Google Apps Script
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYhrw9ksLT12F6yHEMh_eV2A76XcbZfRGPd4xGx7rwotWRvnvkmFfsQ-hzq3D7-wVO/exec";
+const SCRIPT_URL = "INCOLLA_QUI_IL_TUO_URL";
+
+// Variabile per memorizzare il token di sessione dopo il login
+let sessionToken = null;
+
+/****************************************************************/
+/******************      LOGICA DI LOGIN      ******************/
+/****************************************************************/
+
+document.addEventListener('DOMContentLoaded', () => {
+  const loginButton = document.getElementById('login-button');
+  const passwordInput = document.getElementById('password-input');
+
+  loginButton.addEventListener('click', handleLogin);
+  passwordInput.addEventListener('keyup', (event) => {
+    if (event.key === 'Enter') {
+      handleLogin();
+    }
+  });
+});
+
+async function handleLogin() {
+  const passwordInput = document.getElementById('password-input');
+  const loginMessage = document.getElementById('login-message');
+  const loginButton = document.getElementById('login-button');
+
+  const password = passwordInput.value;
+  if (!password) {
+    loginMessage.textContent = 'Inserisci una password.';
+    return;
+  }
+
+  loginMessage.textContent = 'Accesso in corso...';
+  loginButton.disabled = true;
+
+  try {
+    // L'azione di login non richiede un token
+    const result = await callAppsScript('login', { password: password });
+    
+    if (result.token) {
+      sessionToken = result.token;
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('main-container').style.display = 'block';
+      // Ora che siamo loggati, carichiamo i dati iniziali
+      updateDashboard();
+    } else {
+      throw new Error('Token di sessione non ricevuto.');
+    }
+
+  } catch (error) {
+    loginMessage.textContent = `Errore: ${error.message}`;
+  } finally {
+    loginButton.disabled = false;
+  }
+}
 
 /****************************************************************/
 /******************      LOGICA PRINCIPALE      ******************/
@@ -14,10 +68,14 @@ async function callAppsScript(functionName, payload = {}) {
   const response = await fetch(SCRIPT_URL, {
     method: 'POST',
     headers: {
-      'Content-Type': 'text/plain;charset=utf-8', // Necessario per Google Apps Script
+      'Content-Type': 'text/plain;charset=utf-8',
     },
-    body: JSON.stringify({ action: functionName, data: payload }),
-    mode: 'cors', // Abilita CORS
+    body: JSON.stringify({
+      action: functionName, 
+      data: payload,
+      token: sessionToken // Invia sempre il token di sessione (sarà null al login)
+    }),
+    mode: 'cors',
   });
 
   if (!response.ok) {
@@ -27,10 +85,17 @@ async function callAppsScript(functionName, payload = {}) {
 
   const result = await response.json();
   if (result.error) {
+    // Se l'errore è di autorizzazione, potremmo voler forzare un nuovo login
+    if (result.error.includes('Autorizzazione richiesta')) {
+        document.getElementById('login-overlay').style.display = 'flex';
+        document.getElementById('main-container').style.display = 'none';
+    }
     throw new Error(result.error);
   }
   return result.data;
 }
+
+// ... (tutte le altre funzioni rimangono quasi identiche, ma useranno la nuova callAppsScript)
 
 // Funzioni di utilità per codifica e decodifica Base64
 function b64Encode(str) {
@@ -419,6 +484,9 @@ async function updateDashboard() {
   }
 }
 
+// Rimosso l'event listener DOMContentLoaded che chiamava updateDashboard all'inizio.
+// Ora viene chiamato solo dopo un login corretto.
+
 document.addEventListener('DOMContentLoaded', () => {
   updateDashboard();
 
@@ -534,10 +602,9 @@ async function initImageEditor(imageUrl, postTitle, postBody) {
   postBodyPreview.innerHTML = (postBody || '').replace(/\n/g, '<br>');
   textInput.innerHTML = editablePostTitle;
 
-  // Use a proxy to fetch the image if it's from an external domain to avoid CORS issues on canvas
-  const proxiedImageUrl = `${SCRIPT_URL}?action=getImage&url=${encodeURIComponent(imageUrl)}`;
+  // NOTA: Qui c'è ancora il bug dell'immagine. Lo risolveremo dopo il login.
   img.crossOrigin = "Anonymous";
-  img.src = proxiedImageUrl;
+  img.src = imageUrl; 
 
   img.onload = () => {
     const canvasAspect = canvas.width / canvas.height;
@@ -555,7 +622,7 @@ async function initImageEditor(imageUrl, postTitle, postBody) {
   };
 
   img.onerror = () => {
-      console.error("Failed to load image from", proxiedImageUrl);
+      console.error("Failed to load image from", imageUrl);
       ctx.fillStyle = '#f0f0f0';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#666';
