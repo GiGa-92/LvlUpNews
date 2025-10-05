@@ -3,7 +3,7 @@
 /****************************************************************/
 
 // IMPORTANTE: Incolla qui l'URL della tua Web App di Google Apps Script
-const SCRIPT_URL = "INCOLLA_QUI_IL_TUO_URL";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxl6J3fKWlJCHOYjAM_XsZ1dYVPsJTA0VEqDDOogVZy4ba4YDzDhk4dk3aURaiiIdrh/exec";
 
 // Variabile per memorizzare il token di sessione dopo il login
 let sessionToken = null;
