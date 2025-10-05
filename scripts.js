@@ -6,6 +6,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxl6J3fKWlJCHOYjAM_X
 
 let sessionToken = null;
 let appData = null; // Conterrà tutti i dati dei fogli dopo il login
+let currentView = null; // Traccia la vista attualmente visualizzata
 
 /****************************************************************/
 /******************      LOGICA DI LOGIN      ******************/
@@ -44,13 +45,12 @@ async function handleLogin() {
       sessionToken = loginResult.token;
       
       loginMessage.textContent = 'Caricamento dati iniziali...';
-      // Chiamata unica per pre-caricare tutti i dati
       appData = await callAppsScript('getTuttiDatiIniziali');
 
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('main-container').style.display = 'block';
       
-      updateDashboard(); // Aggiorna le statistiche usando i dati pre-caricati
+      updateDashboard();
     } else {
       throw new Error('Token di sessione non ricevuto.');
     }
@@ -72,8 +72,8 @@ async function callAppsScript(functionName, payload = {}) {
     headers: {
       'Content-Type': 'text/plain;charset=utf-8',
     },
-    body: JSON.stringify({ 
-      action: functionName, 
+    body: JSON.stringify({
+      action: functionName,
       data: payload,
       token: sessionToken
     }),
@@ -98,6 +98,24 @@ async function callAppsScript(functionName, payload = {}) {
   return result.data;
 }
 
+async function refreshCurrentView() {
+    const refreshButton = document.querySelector('.view-refresh-button');
+    if(refreshButton) {
+        refreshButton.classList.add('loading');
+        refreshButton.disabled = true;
+    }
+
+    try {
+        appData = await callAppsScript('getTuttiDatiIniziali');
+        updateDashboard(); // Aggiorna le statistiche globali
+        mostraFoglio(currentView); // Ridisegna solo la vista corrente con i nuovi dati
+    } catch (e) {
+        onFailure(e);
+    } finally {
+        // Non c'è bisogno di riattivare il bottone perché verrà ridisegnato da mostraFoglio
+    }
+}
+
 function b64Encode(str) {
   return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
 }
@@ -118,10 +136,10 @@ async function runAction(functionName) {
     try {
       const result = await callAppsScript(functionName);
       onSuccess(result);
-      // Dopo un\'azione che modifica i dati, li ricarichiamo tutti
       resultArea.innerText += '\nAggiornamento dati in corso...';
       appData = await callAppsScript('getTuttiDatiIniziali');
       updateDashboard();
+      mostraFoglio(currentView); // Ridisegna la vista corrente dopo l\'azione
       resultArea.innerText = result + '\nDati aggiornati.';
 
     } catch (error) {
@@ -152,8 +170,8 @@ function onFailure(error) {
   resultArea.style.color = 'white';
 }
 
-// NUOVA LOGICA ISTANTANEA
 function mostraFoglio(viewName) {
+  currentView = viewName; // Imposta la vista corrente
   if (!appData) {
     onFailure({ message: "Dati non ancora caricati. Effettua il login." });
     return;
@@ -166,33 +184,31 @@ function mostraFoglio(viewName) {
   const container = document.getElementById('foglio-container');
   container.innerHTML = '';
   let buttonsHtml = '';
+  const refreshButtonHtml = `<button class="view-refresh-button" onclick="refreshCurrentView()">🔄</button>`;
 
   switch (viewName) {
     case 'notizie':
-      buttonsHtml = `<div class=\"inline-action-buttons\"><button class=\"management-button\" onclick=\"runAction('eseguiAzioneScarica')\">📥 Scarica Nuove Notizie</button><button class=\"management-button\" onclick=\"runAction('eseguiAzioneElabora')\">✨ Elabora Selezionate</button><div class=\"dropdown-container\"><button id=\"btn-gestisci-fonti\" class=\"management-button\" onclick=\"toggleDropdown()\">📡 Gestisci Fonti</button><div id=\"fonti-dropdown\" class=\"dropdown-panel\"><div id=\"fonti-loader\" style=\"padding: 12px;\">Caricamento...</div><ul id=\"fonti-list\"></ul><div class=\"dropdown-footer\"><span id=\"fonti-status\"></span><button id=\"fonti-save-button\" onclick=\"saveFontiChanges()\">Salva</button></div></div></div></div>`;
+      buttonsHtml = `<div class="inline-action-buttons"><button class="management-button" onclick="runAction('eseguiAzioneScarica')">📥 Scarica Nuove Notizie</button><button class="management-button" onclick="runAction('eseguiAzioneElabora')">✨ Elabora Selezionate</button><div class="dropdown-container"><button id="btn-gestisci-fonti" class="management-button" onclick="toggleDropdown()">📡 Gestisci Fonti</button><div id="fonti-dropdown" class="dropdown-panel"><div id="fonti-loader" style="padding: 12px;">Caricamento...</div><ul id="fonti-list"></ul><div class="dropdown-footer"><span id="fonti-status"></span><button id="fonti-save-button" onclick="saveFontiChanges()">Salva</button></div></div></div>${refreshButtonHtml}</div>`;
       container.innerHTML = buttonsHtml + createTableFoglio1(appData.notizie);
       break;
     case 'post_ai':
-      buttonsHtml = `<div class=\"inline-action-buttons\"><button class=\"management-button\" onclick=\"runAction('eseguiAzioneImmagini')\">🖼️ Scarica Link Immagini</button></div>`;
+      buttonsHtml = `<div class="inline-action-buttons"><button class="management-button" onclick="runAction('eseguiAzioneImmagini')">🖼️ Scarica Link Immagini</button>${refreshButtonHtml}</div>`;
       container.innerHTML = buttonsHtml + createTableFoglio2(appData.post_ai);
       break;
     case 'foto':
-      container.innerHTML = createTableFoglio3(appData.foto);
+       buttonsHtml = `<div class="inline-action-buttons">${refreshButtonHtml}</div>`;
+      container.innerHTML = buttonsHtml + createTableFoglio3(appData.foto);
       break;
     case 'in_attesa':
-      container.innerHTML = '<div class=\"table-wrapper-in-attesa\">' + createTableFoglioInAttesa(appData.in_attesa) + '</div>';
+       buttonsHtml = `<div class="inline-action-buttons">${refreshButtonHtml}</div>`;
+      container.innerHTML = '<div class="table-wrapper-in-attesa">' + buttonsHtml + createTableFoglioInAttesa(appData.in_attesa) + '</div>';
       break;
   }
 }
 
-// ... (le funzioni createTable... rimangono quasi identiche)
-// ... (le funzioni di interazione come inviaModifica, etc. rimangono identiche)
-
-// Funzioni per la dashboard (ora usano i dati locali)
 function updateDashboard() {
   if (!appData) return;
 
-  // Calcola le statistiche dai dati in appData
   const stats = {
     notizie: appData.notizie ? appData.notizie.length - 1 : 0,
     post: appData.post_ai ? appData.post_ai.length - 1 : 0,
@@ -212,6 +228,9 @@ function updateDashboard() {
       try {
           appData = await callAppsScript('getTuttiDatiIniziali');
           updateDashboard();
+          if(currentView) {
+            mostraFoglio(currentView);
+          }
       } catch (e) {
           onFailure(e);
       } finally {
@@ -221,12 +240,10 @@ function updateDashboard() {
   };
 }
 
-// Le altre funzioni (createTable, inviaModifica, etc.) rimangono qui sotto
-
 function createTable(data, renderRow) {
   if (!data || data.length <= 1) {
     const message = (data && data.length > 0 && data[0].length > 0) ? data[0].join(": ") : 'Nessun dato da mostrare.';
-    return `<div class=\"result-area-inline\">${message}</div>`;
+    return `<div class="result-area-inline">${message}</div>`;
   }
   let tableHtml = '<table>';
   const headers = data[0];
@@ -247,7 +264,7 @@ function createTableFoglio1(data) {
     let rowHtml = `<tr>`;
     rowData.forEach((cell, index) => {
       const label = headers[index] ? escapeHtml(headers[index]) : '';
-      if (index === 3) { // Colonna "Selezionato"
+      if (index === 3) {
         const isChecked = cell.toString().toLowerCase() === 'sì';
         rowHtml += `<td data-label="${label}"><input type="checkbox" onchange="inviaModifica(this, ${sheetRowNumber})" ${isChecked ? 'checked' : ''}><span id="status-${sheetRowNumber}" class="update-status"></span></td>`;
       } else {
@@ -263,7 +280,7 @@ function createTableFoglio2(data) {
     let rowHtml = `<tr>`;
     rowData.forEach((cell, index) => {
       const label = headers[index] ? escapeHtml(headers[index]) : '';
-      if (index === 3 || index === 4) { // Colonne editabili
+      if (index === 3 || index === 4) {
         rowHtml += `<td data-label="${label}"><div id="cell-${sheetRowNumber}-${index}" contenteditable="true" class="editable-cell">${escapeHtml(cell)}</div></td>`;
       } else {
         rowHtml += `<td data-label="${label}">${escapeHtml(cell)}</td>`;
@@ -296,7 +313,7 @@ function createTableFoglio3(data) {
 }
 
 function createTableFoglioInAttesa(data) {
-  const displayHeaders = [data[0][0], data[0][5], "Azione"]; // Titolo, Stato, Azione
+  const displayHeaders = [data[0][0], data[0][5], "Azione"];
   const displayData = [displayHeaders, ...data.slice(1)];
 
   return createTable(displayData, (rowData, _, headers) => {
@@ -400,8 +417,7 @@ async function salvaModificheFoglio2(riga) {
 
   try {
     await callAppsScript('aggiornaPostFoglio2', { riga, postInstagram, postSlide });
-    // Aggiorna i dati locali
-    const rowIndex = appData.post_ai.findIndex(row => row[0] === riga); // Assumendo che la riga sia il primo elemento
+    const rowIndex = appData.post_ai.findIndex(row => row[0] === riga);
     if(rowIndex > -1) {
         appData.post_ai[rowIndex][3] = postInstagram;
         appData.post_ai[rowIndex][4] = postSlide;
@@ -420,7 +436,7 @@ async function inviaModifica(checkboxElement, riga) {
 
   try {
     await callAppsScript('aggiornaStatoNotizia', { riga, stato: nuovoStato });
-    const rowIndex = appData.notizie.findIndex(row => row[0] === riga); // Assumendo che la riga sia il primo elemento
+    const rowIndex = appData.notizie.findIndex(row => row[0] === riga);
     if(rowIndex > -1) {
         appData.notizie[rowIndex][3] = nuovoStato;
     }
@@ -483,7 +499,7 @@ async function saveFontiChanges() {
   try {
     await callAppsScript('salvaStatoFonti', { fonti: newSources });
     status.textContent = '✅ Salvato!';
-    fontiCaricate = false; // Force reload on next open
+    fontiCaricate = false;
     setTimeout(() => {
       document.getElementById('fonti-dropdown').classList.remove('show');
       saveButton.disabled = false;
@@ -557,7 +573,6 @@ document.getElementById('modal-schedule-button').addEventListener('click', async
     scheduleButton.disabled = false;
     setTimeout(async () => {
       closePreviewModal();
-      // Ricarica solo i dati necessari e aggiorna la vista
       appData.in_attesa = await callAppsScript('eseguiMostraFoglioInAttesa');
       mostraFoglio('in_attesa');
       updateDashboard();
@@ -624,7 +639,6 @@ async function initImageEditor(imageUrl, postTitle, postBody) {
   postBodyPreview.innerHTML = (postBody || '').replace(/\n/g, '<br>');
   textInput.innerHTML = editablePostTitle;
 
-  // NOTA: Qui c\'è ancora il bug dell\'immagine. Lo risolveremo dopo.
   img.crossOrigin = "Anonymous";
   img.src = imageUrl; 
 
@@ -710,7 +724,7 @@ async function initImageEditor(imageUrl, postTitle, postBody) {
 
           let finalWeight = fontWeight;
           let finalStyle = fontStyle;
-          let itemColor = textColor; // Default to the main text color
+          let itemColor = textColor;
           let parent = node.parentNode;
 
           while (parent && parent !== textInput) {
@@ -812,7 +826,6 @@ async function initImageEditor(imageUrl, postTitle, postBody) {
       const response = await callAppsScript('_salvaImmagineEPostInAttesa', { immagineBase64: imageData, titolo: finalTitle, testo: finalBody });
       alert(response);
       closeImageEditor();
-      // Ricarica i dati e aggiorna la vista
       appData.in_attesa = await callAppsScript('eseguiMostraFoglioInAttesa');
       mostraFoglio('in_attesa');
       updateDashboard();
