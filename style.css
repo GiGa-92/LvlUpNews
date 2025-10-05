@@ -385,6 +385,26 @@ input[type="checkbox"] {
   background-color: #F9FAFB;
   border-radius: 8px;
   border: 1px solid var(--border-color);
+  align-items: center; /* Allinea verticalmente i pulsanti */
+}
+
+.view-refresh-button {
+  margin-left: auto; /* Spinge il pulsante a destra */
+  background: none;
+  border: 1px solid transparent;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: transform 0.5s, background-color 0.2s;
+}
+
+.view-refresh-button:hover {
+  background-color: #e0e0e0;
+}
+
+.view-refresh-button.loading {
+  transform: rotate(360deg);
 }
 
 .result-area-inline {
