@@ -1,995 +1,201 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <base target="_top">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> 
-    <link rel="stylesheet" href="style.css">
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <h1>🚀 Pannello LvlUp News</h1>
-        <p>Un'interfaccia per automatizzare il flusso di creazione delle notizie.</p>
-      </div>
-
-    <!-- NEW DASHBOARD SECTION -->
-    <div class="section">
-      <h2 class="section-title">Pannello di Controllo <button id="refresh-dashboard" onclick="updateDashboard()">🔄</button></h2>
-      <div class="dashboard-grid">
-        <!-- Stat Card 1 -->
-        <div class="stat-card">
-          <div class="icon icon-notizie">📰</div>
-          <div class="stat-card-info">
-            <div class="value" id="stat-notizie">...</div>
-            <div class="label">Notizie da Valutare</div>
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <base target="_top">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> 
+        <link rel="stylesheet" href="style.css">
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🚀 Pannello LvlUp News</h1>
+            <p>Un'interfaccia per automatizzare il flusso di creazione delle notizie.</p>
           </div>
-        </div>
-        <!-- Stat Card 2 -->
-        <div class="stat-card">
-          <div class="icon icon-elabora">✨</div>
-          <div class="stat-card-info">
-            <div class="value" id="stat-post">...</div>
-            <div class="label">Post Pronti (AI)</div>
-          </div>
-        </div>
-        <!-- Stat Card 3 -->
-        <div class="stat-card">
-          <div class="icon icon-immagini">🖼️</div>
-          <div class="stat-card-info">
-            <div class="value" id="stat-immagini">...</div>
-            <div class="label">Immagini da Selezionare</div>
-          </div>
-        </div>
-        <!-- Stat Card 4 -->
-        <div class="stat-card">
-          <div class="icon icon-esporta">🚀</div>
-          <div class="stat-card-info">
-            <div class="value" id="stat-esporta">...</div>
-            <div class="label">Pronti per l'Esportazione</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-      <!-- Management and Visualization Section -->
-      <div class="section">
-        <h2 class="section-title">Visualizzazione e Gestione</h2>
-        <div class="management-grid">
-          <button class="management-button" onclick="mostraFoglio('eseguiMostraFoglio')">📰 Notizie</button>
-          <button class="management-button" onclick="mostraFoglio('eseguiMostraFoglio2')">🤖 Post AI</button>
-          <button class="management-button" onclick="mostraFoglio('eseguiMostraFoglio3')">📷 Foto</button>
-          <button class="management-button" onclick="mostraFoglio('eseguiMostraFoglioInAttesa')">⏳ In Attesa</button>
-
-        </div>
-      </div>
-
-      <div id="loader" class="loader"></div>
-      <div id="result-area"></div>
-      <div id="foglio-container"></div>
-    </div>
-
-    <!-- Modal Structure -->
-    <div id="editor-modal-overlay" class="modal-overlay">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Editor Immagine</h2>
-          <button id="modal-close-btn" class="modal-close-btn">×</button>
-        </div>
-        <div class="modal-body">
-          <div class="editor-layout">
-            <div class="editor-canvas-wrapper">
-              <canvas id="image-editor" width="1080" height="1080"></canvas>
+    
+        <!-- NEW DASHBOARD SECTION -->
+        <div class="section">
+          <h2 class="section-title">Pannello di Controllo <button id="refresh-dashboard" onclick="updateDashboard()">🔄</button></h2>
+          <div class="dashboard-grid">
+            <!-- Stat Card 1 -->
+            <div class="stat-card">
+              <div class="icon icon-notizie">📰</div>
+              <div class="stat-card-info">
+                <div class="value" id="stat-notizie">...</div>
+                <div class="label">Notizie da Valutare</div>
+              </div>
             </div>
-            <div class="editor-controls-wrapper">
-              <div class="control-section">
-                <h3>Testo</h3>
-                <div class="editor-toolbar">
-                  <button type="button" class="toolbar-button" onclick="document.execCommand('bold', false, null);"><b>B</b></button>
-                  <button type="button" class="toolbar-button" onclick="document.execCommand('italic', false, null);"><i>I</i></button>
-                  <input type="color" class="toolbar-button" id="text-color-picker" oninput="document.execCommand('foreColor', false, this.value);" title="Colore testo">
-                </div>
-                <div id="text-input" class="editable-text-area" contenteditable="true" placeholder="Scrivi qui il tuo testo..."></div>
+            <!-- Stat Card 2 -->
+            <div class="stat-card">
+              <div class="icon icon-elabora">✨</div>
+              <div class="stat-card-info">
+                <div class="value" id="stat-post">...</div>
+                <div class="label">Post Pronti (AI)</div>
               </div>
-              <div class="control-section">
-                <h3>Stile Font</h3>
-                <div class="grid-controls">
-                  <div class="control-group">
-                    <label for="text-color">Colore</label>
-                    <input type="color" id="text-color" value="#FFFFFF">
+            </div>
+            <!-- Stat Card 3 -->
+            <div class="stat-card">
+              <div class="icon icon-immagini">🖼️</div>
+              <div class="stat-card-info">
+                <div class="value" id="stat-immagini">...</div>
+                <div class="label">Immagini da Selezionare</div>
+              </div>
+            </div>
+            <!-- Stat Card 4 -->
+            <div class="stat-card">
+              <div class="icon icon-esporta">🚀</div>
+              <div class="stat-card-info">
+                <div class="value" id="stat-esporta">...</div>
+                <div class="label">Pronti per l'Esportazione</div>
+              </div>
+            </div>
+          </div>
+        </div>
+    
+          <!-- Management and Visualization Section -->
+          <div class="section">
+            <h2 class="section-title">Visualizzazione e Gestione</h2>
+            <div class="management-grid">
+              <button class="management-button" onclick="mostraFoglio('eseguiMostraFoglio')">📰 Notizie</button>
+              <button class="management-button" onclick="mostraFoglio('eseguiMostraFoglio2')">🤖 Post AI</button>
+              <button class="management-button" onclick="mostraFoglio('eseguiMostraFoglio3')">📷 Foto</button>
+              <button class="management-button" onclick="mostraFoglio('eseguiMostraFoglioInAttesa')">⏳ In Attesa</button>
+    
+            </div>
+          </div>
+    
+          <div id="loader" class="loader"></div>
+          <div id="result-area"></div>
+          <div id="foglio-container"></div>
+        </div>
+    
+        <!-- Modal Structure -->
+        <div id="editor-modal-overlay" class="modal-overlay">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Editor Immagine</h2>
+              <button id="modal-close-btn" class="modal-close-btn">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="editor-layout">
+                <div class="editor-canvas-wrapper">
+                  <canvas id="image-editor" width="1080" height="1080"></canvas>
+                </div>
+                <div class="editor-controls-wrapper">
+                  <div class="control-section">
+                    <h3>Testo</h3>
+                    <div class="editor-toolbar">
+                      <button type="button" class="toolbar-button" onmousedown="event.preventDefault();" onclick="document.execCommand('bold', false, null);"><b>B</b></button>
+                      <button type="button" class="toolbar-button" onmousedown="event.preventDefault();" onclick="document.execCommand('italic', false, null);"><i>I</i></button>
+                      <input type="color" class="toolbar-button" id="text-color-picker" onmousedown="event.preventDefault();" oninput="document.execCommand('foreColor', false, this.value);" title="Colore testo">
+                    </div>
+                    <div id="text-input" class="editable-text-area" contenteditable="true" placeholder="Scrivi qui il tuo testo..."></div>
                   </div>
-                  <div class="control-group">
-                    <label for="font-size">Dimensione</label>
-                    <input type="number" id="font-size" value="50">
+                  <div class="control-section">
+                    <h3>Stile Font</h3>
+                    <div class="grid-controls">
+                      <div class="control-group">
+                        <label for="text-color">Colore</label>
+                        <input type="color" id="text-color" value="#FFFFFF">
+                      </div>
+                      <div class="control-group">
+                        <label for="font-size">Dimensione</label>
+                        <input type="number" id="font-size" value="50">
+                      </div>
+                      <div class="control-group">
+                        <label for="line-height">Interlinea</label>
+                        <input type="number" id="line-height" value="60">
+                      </div>
+                      <div class="control-group">
+                        <label for="font-weight">Spessore</label>
+                        <select id="font-weight">
+                          <option value="700">Grassetto</option>
+                          <option value="400">Normale</option>
+                          <option value="200">Leggero</option>
+                        </select>
+                      </div>
+                      <div class="control-group">
+                        <label for="font-style">Stile</label>
+                        <select id="font-style">
+                          <option value="normal">Normale</option>
+                          <option value="italic">Corsivo</option>
+                        </select>
+                      </div>
+                      <div class="control-group">
+                        <label for="text-align">Allineamento</label>
+                        <select id="text-align">
+                          <option value="center">Centrato</option>
+                          <option value="left">Sinistra</option>
+                          <option value="right">Destra</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                  <div class="control-group">
-                    <label for="line-height">Interlinea</label>
-                    <input type="number" id="line-height" value="60">
+                  <div class="control-section">
+                    <h3>Effetti Sfondo</h3>
+                    <div class="grid-controls">
+                      <div class="control-group">
+                        <label for="gradient-color">Colore Gradiente</label>
+                        <input type="color" id="gradient-color" value="#000000">
+                      </div>
+                      <div class="control-group">
+                        <label for="gradient-opacity">Opacità</label>
+                        <input type="range" id="gradient-opacity" min="0" max="1" step="0.05" value="0.7">
+                      </div>
+                    </div>
                   </div>
-                  <div class="control-group">
-                    <label for="font-weight">Spessore</label>
-                    <select id="font-weight">
-                      <option value="700">Grassetto</option>
-                      <option value="400">Normale</option>
-                      <option value="200">Leggero</option>
-                    </select>
+                  <div class="control-section">
+                    <h3>Ombra Testo</h3>
+                    <div class="control-group">
+                      <label for="shadow-blur">Intensità Ombra</label>
+                      <input type="range" id="shadow-blur" min="0" max="20" step="1" value="0">
+                    </div>
                   </div>
-                  <div class="control-group">
-                    <label for="font-style">Stile</label>
-                    <select id="font-style">
-                      <option value="normal">Normale</option>
-                      <option value="italic">Corsivo</option>
-                    </select>
+                  <div class="control-section">
+                    <h3>Anteprima Testo Post</h3>
+                    <div id="post-body-preview" style="font-size: 14px; padding: 10px; background-color: #f0f2f5; border-radius: 6px; max-height: 150px; overflow-y: auto;"></div>
                   </div>
-                  <div class="control-group">
-                    <label for="text-align">Allineamento</label>
-                    <select id="text-align">
-                      <option value="center">Centrato</option>
-                      <option value="left">Sinistra</option>
-                      <option value="right">Destra</option>
-                    </select>
+                  <div class="button-container">
+                    <button id="save-btn">Salva</button>
                   </div>
                 </div>
               </div>
-              <div class="control-section">
-                <h3>Effetti Sfondo</h3>
-                <div class="grid-controls">
-                  <div class="control-group">
-                    <label for="gradient-color">Colore Gradiente</label>
-                    <input type="color" id="gradient-color" value="#000000">
-                  </div>
-                  <div class="control-group">
-                    <label for="gradient-opacity">Opacità</label>
-                    <input type="range" id="gradient-opacity" min="0" max="1" step="0.05" value="0.7">
-                  </div>
-                </div>
-              </div>
-              <div class="control-section">
-                <h3>Ombra Testo</h3>
+            </div>
+          </div>
+        </div>
+    
+        <!-- Preview Modal Structure -->
+        <div id="preview-modal" class="modal-overlay">
+          <div class="modal-content" style="max-width: 800px; height: auto; max-height: 90vh;">
+            <div class="modal-header">
+              <h2 id="preview-title">Anteprima Post</h2>
+              <button id="preview-modal-close-btn" class="modal-close-btn">×</button>
+            </div>
+            <div class="modal-body">
+              <img id="preview-image" src="" style="width: 100%; height: auto; margin-bottom: 16px;">
+              <div id="preview-text" style="white-space: pre-wrap; font-size: 16px; line-height: 1.6;"></div>
+              <hr style="border: none; border-top: 1px solid var(--border-color); margin: 20px 0;">
+              <div class="scheduling-controls">
                 <div class="control-group">
-                  <label for="shadow-blur">Intensità Ombra</label>
-                  <input type="range" id="shadow-blur" min="0" max="20" step="1" value="0">
+                  <label for="modal-schedule-date">Data Pubblicazione</label>
+                  <input type="date" id="modal-schedule-date" class="editable-input">
+                </div>
+                <div class="control-group">
+                  <label for="modal-schedule-time">Ora Pubblicazione</label>
+                  <input type="time" id="modal-schedule-time" class="editable-input">
+                </div>
+                <div class="control-group">
+                  <button id="modal-schedule-button" class="management-button">Programma</button>
+                </div>
+                <div class="control-group">
+                  <span id="modal-status" class="update-status"></span>
                 </div>
               </div>
-              <div class="control-section">
-                <h3>Anteprima Testo Post</h3>
-                <div id="post-body-preview" style="font-size: 14px; padding: 10px; background-color: #f0f2f5; border-radius: 6px; max-height: 150px; overflow-y: auto;"></div>
-              </div>
-              <div class="button-container">
-                <button id="save-btn">Salva</button>
-              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Preview Modal Structure -->
-    <div id="preview-modal" class="modal-overlay">
-      <div class="modal-content" style="max-width: 800px; height: auto; max-height: 90vh;">
-        <div class="modal-header">
-          <h2 id="preview-title">Anteprima Post</h2>
-          <button id="preview-modal-close-btn" class="modal-close-btn">×</button>
-        </div>
-        <div class="modal-body">
-          <img id="preview-image" src="" style="width: 100%; height: auto; margin-bottom: 16px;">
-          <div id="preview-text" style="white-space: pre-wrap; font-size: 16px; line-height: 1.6;"></div>
-          <hr style="border: none; border-top: 1px solid var(--border-color); margin: 20px 0;">
-          <div class="scheduling-controls">
-            <div class="control-group">
-              <label for="modal-schedule-date">Data Pubblicazione</label>
-              <input type="date" id="modal-schedule-date" class="editable-input">
-            </div>
-            <div class="control-group">
-              <label for="modal-schedule-time">Ora Pubblicazione</label>
-              <input type="time" id="modal-schedule-time" class="editable-input">
-            </div>
-            <div class="control-group">
-              <button id="modal-schedule-button" class="management-button">Programma</button>
-            </div>
-            <div class="control-group">
-              <span id="modal-status" class="update-status"></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <script>
-    /****************************************************************/
-    /******************      LOGICA PRINCIPALE      ******************/ 
-    /****************************************************************/
-
-      // Funzioni di utilità per codifica e decodifica Base64
-      function b64Encode(str) {
-        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, 
-            function toSolidBytes(match, p1) {
-                return String.fromCharCode('0x' + p1);
-        }));
-      }
-
-      function b64Decode(str) {
-        return decodeURIComponent(atob(str).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-      }
-
-      // Funzioni per i pulsanti di azione principali
-      function runAction(functionName) {
-        document.querySelectorAll('button').forEach(btn => btn.disabled = true);
-        if (confirm("Sei sicuro di voler avviare l'azione: " + functionName + "?")) {
-          const loader = document.getElementById('loader');
-          const resultArea = document.getElementById('result-area');
-          loader.style.display = 'block';
-          resultArea.style.display = 'block';
-          resultArea.innerText = 'Esecuzione in corso...';
-          
-          google.script.run
-            .withSuccessHandler(onSuccess)
-            .withFailureHandler(onFailure)
-            [functionName](); // Dynamic function call
-        } else {
-          document.querySelectorAll('button').forEach(btn => btn.disabled = false);
-        }
-      }
-
-      function onSuccess(result) {
-        document.querySelectorAll('button').forEach(btn => btn.disabled = false);
-        document.getElementById('loader').style.display = 'none';
-        const resultArea = document.getElementById('result-area');
-        resultArea.innerText = result;
-        resultArea.style.display = 'block';
-        resultArea.style.backgroundColor = '#28A745'; // Success color
-        resultArea.style.color = 'white';
-      }
-
-      function onFailure(error) {
-        document.querySelectorAll('button').forEach(btn => btn.disabled = false);
-        document.getElementById('loader').style.display = 'none';
-        const resultArea = document.getElementById('result-area');
-        resultArea.innerText = 'Si è verificato un errore: ' + error.message;
-        resultArea.style.display = 'block';
-        resultArea.style.backgroundColor = '#EF4444'; // Error color
-        resultArea.style.color = 'white';
-      }
-
-      // Funzioni per la visualizzazione dei fogli
-      function mostraFoglio(functionName) {
-        document.getElementById('loader').style.display = 'block';
-        document.getElementById('foglio-container').style.display = 'none';
-        document.getElementById('result-area').style.display = 'none';
-
-        google.script.run
-          .withSuccessHandler(function(data) {
-            document.getElementById('loader').style.display = 'none';
-            const container = document.getElementById('foglio-container');
-            container.innerHTML = ''; // Clear previous content
-            
-            let buttonsHtml = '';
-            if (functionName === 'eseguiMostraFoglio') {
-              buttonsHtml = `<div class="inline-action-buttons"><button class="management-button" onclick="runAction('eseguiAzioneScarica')">📥 Scarica Nuove Notizie</button><button class="management-button" onclick="runAction('eseguiAzioneElabora')">✨ Elabora Selezionate</button><div class="dropdown-container"><button id="btn-gestisci-fonti" class="management-button" onclick="toggleDropdown()">📡 Gestisci Fonti</button><div id="fonti-dropdown" class="dropdown-panel"><div id="fonti-loader" style="padding: 12px;">Caricamento...</div><ul id="fonti-list"></ul><div class="dropdown-footer"><span id="fonti-status"></span><button id="fonti-save-button" onclick="saveFontiChanges()">Salva</button></div></div></div></div>`;
-              container.innerHTML = buttonsHtml + createTableFoglio1(data);
-            } else if (functionName === 'eseguiMostraFoglio2') {
-              buttonsHtml = `<div class="inline-action-buttons"><button class="management-button" onclick="runAction('eseguiAzioneImmagini')">🖼️ Scarica Link Immagini</button></div>`;
-              container.innerHTML = buttonsHtml + createTableFoglio2(data);
-            } else if (functionName === 'eseguiMostraFoglio3') {
-              container.innerHTML = createTableFoglio3(data);
-            } else if (functionName === 'eseguiMostraFoglioInAttesa') { 
-              google.script.run
-                .withSuccessHandler(function(baseUrl) {
-                  container.innerHTML = '<div class="table-wrapper-in-attesa">' + createTableFoglioInAttesa(data, baseUrl) + '</div>';
-                })
-                .withFailureHandler(onFailure)
-                .getScriptUrl();
-            }
-            
-            container.style.display = 'block';
-          })
-          .withFailureHandler(onFailure)
-          [functionName]();
-      }
-
-      function createTable(data, renderRow) {
-        if (!data || data.length <= 1) {
-          const message = (data && data.length > 0 && data[0].length > 0) ? data[0].join(": ") : 'Nessun dato da mostrare.';
-          return `<div class="result-area-inline">${message}</div>`;
-        }
-        let tableHtml = '<table>';
-        const headers = data[0];
-        tableHtml += '<thead><tr>';
-        headers.forEach(header => { tableHtml += `<th>${escapeHtml(header)}</th>`; });
-        if (renderRow.name.includes('Foglio2') || renderRow.name.includes('Foglio3')) { tableHtml += '<th>Azione</th>'; } 
-        tableHtml += '</tr></thead>';
-        tableHtml += '<tbody>';
-        for (let i = 1; i < data.length; i++) {
-          tableHtml += renderRow(data[i], i + 1, headers);
-        }
-        tableHtml += '</tbody></table>';
-        return tableHtml;
-      }
-
-      function createTableFoglio1(data) {
-        return createTable(data, (rowData, sheetRowNumber, headers) => {
-          let rowHtml = `<tr>`;
-          rowData.forEach((cell, index) => {
-            const label = headers[index] ? escapeHtml(headers[index]) : '';
-            if (index === 3) { // Colonna "Selezionato"
-              const isChecked = cell.toString().toLowerCase() === 'sì';
-              rowHtml += `<td data-label="${label}"><input type="checkbox" onchange="inviaModifica(this, ${sheetRowNumber})" ${isChecked ? 'checked' : ''}><span id="status-${sheetRowNumber}" class="update-status"></span></td>`;
-            } else {
-              rowHtml += `<td data-label="${label}">${escapeHtml(cell)}</td>`;
-            }
-          });
-          return rowHtml + '</tr>';
-        });
-      }
-
-      function createTableFoglio2(data) {
-        return createTable(data, (rowData, sheetRowNumber, headers) => {
-          let rowHtml = `<tr>`;
-          rowData.forEach((cell, index) => {
-            const label = headers[index] ? escapeHtml(headers[index]) : '';
-            if (index === 3 || index === 4) { // Colonne editabili
-              rowHtml += `<td data-label="${label}"><div id="cell-${sheetRowNumber}-${index}" contenteditable="true" class="editable-cell">${escapeHtml(cell)}</div></td>`;
-            } else {
-              rowHtml += `<td data-label="${label}">${escapeHtml(cell)}</td>`;
-            }
-          });
-          rowHtml += `<td data-label="Azione"><button class="management-button" onclick="salvaModificheFoglio2(${sheetRowNumber})">Salva</button><span id="status-foglio2-${sheetRowNumber}" class="update-status"></span></td>`;
-          return rowHtml + '</tr>';
-        });
-      }
-
-      function createTableFoglio3(data) {
-        return createTable(data, (rowData, sheetRowNumber, headers) => {
-          let rowHtml = `<tr>`;
-          const gameTitle = rowData[0];
-          const imageUrl = rowData[1];
-          const postTitle = rowData[2] || ''; 
-          const postBody = rowData[3] || '';
-
-          rowHtml += `<td data-label="${headers[0]}">${escapeHtml(gameTitle)}</td>`;
-          rowHtml += `<td data-label="${headers[1]}"><img src="${escapeHtml(imageUrl)}" style="max-width: 150px; max-height: 100px; object-fit: cover; border-radius: 4px;" loading="lazy"></td>`;
-          
-          rowHtml += `<td data-label="Azione"><button class="management-button" 
-            data-image-url="${escapeHtml(imageUrl)}"
-            data-post-title="${b64Encode(postTitle)}"
-            data-post-body="${b64Encode(postBody)}"
-            onclick="openImageEditor(this)">Modifica</button></td>`;
-          
-          return rowHtml + '</tr>';
-        });
-      }
-
-      function createTableFoglio3(data) {
-        return createTable(data, (rowData, sheetRowNumber, headers) => {
-          let rowHtml = `<tr>`;
-          const gameTitle = rowData[0];
-          const imageUrl = rowData[1];
-          const postTitle = rowData[2] || ''; 
-          const postBody = rowData[3] || '';
-
-          rowHtml += `<td data-label="${headers[0]}">${escapeHtml(gameTitle)}</td>`;
-          rowHtml += `<td data-label="${headers[1]}"><img src="${escapeHtml(imageUrl)}" style="max-width: 150px; max-height: 100px; object-fit: cover; border-radius: 4px;" loading="lazy"></td>`;
-          
-          rowHtml += `<td data-label="Azione"><button class="management-button" 
-            data-image-url="${escapeHtml(imageUrl)}"
-            data-post-title="${b64Encode(postTitle)}"
-            data-post-body="${b64Encode(postBody)}"
-            onclick="openImageEditor(this)">Modifica</button></td>`;
-          
-          return rowHtml + '</tr>';
-        });
-      }
-
-      function createTableFoglioInAttesa(data, baseUrl) {
-        // Definiamo gli header che vogliamo visualizzare
-        const displayHeaders = [data[0][0], data[0][5], "Azione"]; // Titolo, Stato, Azione
-        const displayData = [displayHeaders, ...data.slice(1)];
-
-        return createTable(displayData, (rowData, _ , headers) => {
-          // Estraiamo tutti i dati dalla riga originale
-          const titolo = rowData[0];
-          const testo = rowData[1];
-          const imageUrl = rowData[2];
-          const dateValue = rowData[3];
-          const timeValue = rowData[4];
-          const stato = rowData[5];
-          const sheetRowNumber = rowData[6];
-
-          // Logica per assegnare una classe CSS in base al testo dello stato
-          let statusClass = '';
-          const lowerCaseStato = stato.toLowerCase();
-          if (lowerCaseStato.includes('pubblicato')) {
-            statusClass = 'status-published';
-          } else if (lowerCaseStato.includes('programmato')) {
-            statusClass = 'status-scheduled';
-          } else if (lowerCaseStato.includes('da programmare')) {
-            statusClass = 'status-pending';
-          } else if (lowerCaseStato.includes('errore')) {
-            statusClass = 'status-error';
-          }
-
-          let rowHtml = `<tr>`;
-          // Cella per il Titolo
-          rowHtml += `<td data-label="${headers[0]}">${escapeHtml(titolo)}</td>`;
-          // Cella per lo Stato con feedback visivo
-          rowHtml += `<td data-label="${headers[1]}"><span class="status-pill ${statusClass}">${escapeHtml(stato)}</span></td>`;
-          // Cella per i pulsanti Azione
-          rowHtml += `<td data-label="${headers[2]}" class="action-cell">
-                        <button class="management-button preview-button"
-                                data-titolo="${b64Encode(titolo)}"
-                                data-testo="${b64Encode(testo)}"
-                                data-image-url="${escapeHtml(imageUrl)}"
-                                data-date-value="${escapeHtml(dateValue)}"
-                                data-time-value="${escapeHtml(timeValue)}"
-                                data-row-number="${sheetRowNumber}">Anteprima</button>
-                        <button class="management-button delete-button" onclick="confermaEliminaPost(${sheetRowNumber})">
-                          &times;
-                        </button>
-                      </td>`;
-          return rowHtml + '</tr>';
-        });
-      }
-
-      function confermaEliminaPost(riga) {
-        if (confirm(`Sei sicuro di voler eliminare il post alla riga ${riga}? L\'azione è irreversibile.`)) {
-          const rowElement = document.querySelector(`button[data-row-number="${riga}"]`).closest('tr');
-          if(rowElement) {
-            rowElement.style.opacity = '0.5';
-            rowElement.style.pointerEvents = 'none';
-          }
-
-          google.script.run
-            .withSuccessHandler(response => {
-              mostraFoglio('eseguiMostraFoglioInAttesa');
-            })
-            .withFailureHandler(error => {
-              alert('Errore durante l\'eliminazione: ' + error.message);
-              if(rowElement) {
-                rowElement.style.opacity = '1';
-                rowElement.style.pointerEvents = 'auto';
-              }
-            })
-            .eliminaPostInAttesa(riga);
-        }
-      }
-
-      function openPreviewModal(titolo, testo, imageUrl, data, ora, rowNumber) {
-        const modal = document.getElementById('preview-modal');
-        modal.dataset.rowNumber = rowNumber;
-
-        document.getElementById('preview-title').innerText = b64Decode(titolo);
-        document.getElementById('preview-text').innerText = b64Decode(testo).replace(/\n/g, '\n');
-        
-        // Popola i nuovi input per data e ora
-        document.getElementById('modal-schedule-date').value = data || '';
-        document.getElementById('modal-schedule-time').value = ora || '';
-        
-        // Resetta lo stato del modal
-        document.getElementById('modal-status').innerText = '';
-        document.getElementById('modal-schedule-button').disabled = false;
-
-        const imageElement = document.getElementById('preview-image');
-        
-        modal.style.display = 'flex';
-        
-        if (imageUrl) {
-          imageElement.src = imageUrl;
-          imageElement.style.display = 'block';
-        } else {
-          imageElement.src = '';
-          imageElement.style.display = 'none';
-        }
-      }
-
-      function closePreviewModal() {
-        document.getElementById('preview-modal').style.display = 'none';
-      }
-
-      // La funzione salvaDataOraInAttesa non è più necessaria perché l'azione è stata spostata nel modal.
-      // function salvaDataOraInAttesa(sheetRowNumber) { ... }
-
-
-
-
-
-      function salvaModificheFoglio2(riga) {
-        const postInstagram = document.getElementById(`cell-${riga}-3`).innerText;
-        const postSlide = document.getElementById(`cell-${riga}-4`).innerText;
-        const statusSpan = document.getElementById(`status-foglio2-${riga}`);
-        statusSpan.innerText = 'Salvataggio...';
-        google.script.run.withSuccessHandler(response => {
-          statusSpan.innerText = '✅';
-          setTimeout(() => { statusSpan.innerText = ''; }, 2000);
-        }).withFailureHandler(error => {
-          statusSpan.innerText = '❌ Errore';
-        }).aggiornaPostFoglio2(riga, postInstagram, postSlide);
-      }
-
-      function inviaModifica(checkboxElement, riga) {
-        const nuovoStato = checkboxElement.checked ? 'Sì' : 'No';
-        const statusSpan = document.getElementById('status-' + riga);
-        statusSpan.innerText = 'Salvataggio...';
-        google.script.run.withSuccessHandler(response => {
-          statusSpan.innerText = '✅';
-          setTimeout(() => { statusSpan.innerText = ''; }, 2000);
-        }).withFailureHandler(error => {
-          statusSpan.innerText = '❌ Errore';
-          checkboxElement.checked = !checkboxElement.checked;
-        }).aggiornaStatoNotizia(riga, nuovoStato);
-      }
-
-      // Funzioni per il dropdown delle fonti
-      let fontiData = [];
-      let fontiCaricate = false;
-
-      function toggleDropdown() {
-        const dropdown = document.getElementById('fonti-dropdown');
-        const isVisible = dropdown.classList.toggle('show');
-        if (isVisible && !fontiCaricate) {
-          google.script.run.withSuccessHandler(onFontiLoaded).withFailureHandler(onFontiFailure).getFonti();
-        }
-      }
-
-      function onFontiLoaded(fonti) {
-        fontiCaricate = true;
-        fontiData = fonti;
-        const list = document.getElementById('fonti-list');
-        const loader = document.getElementById('fonti-loader');
-        list.innerHTML = '';
-        if (fonti.length === 0) {
-          list.innerHTML = '<li style="padding: 0 10px;">Nessuna fonte configurata.</li>';
-        } else {
-          fonti.forEach((source, index) => {
-            const li = document.createElement('li');
-            li.innerHTML = `<input type="checkbox" id="fonte-${index}" ${source.active ? 'checked' : ''}><label for="fonte-${index}">${escapeHtml(source.url)}</label>`;
-            list.appendChild(li);
-          });
-        }
-        loader.style.display = 'none';
-      }
-
-      function onFontiFailure(error) {
-        document.getElementById('fonti-loader').innerText = 'Errore nel caricamento.';
-      }
-
-      function saveFontiChanges() {
-        const saveButton = document.getElementById('fonti-save-button');
-        const status = document.getElementById('fonti-status');
-        saveButton.disabled = true;
-        status.textContent = 'Salvataggio...';
-        const newSources = fontiData.map((source, index) => {
-          const checkbox = document.getElementById('fonte-' + index);
-          return { url: source.url, active: checkbox.checked };
-        });
-        google.script.run.withSuccessHandler(() => {
-          status.textContent = '✅ Salvato!';
-          fontiCaricate = false; // Force reload on next open
-          setTimeout(() => {
-            document.getElementById('fonti-dropdown').classList.remove('show');
-            saveButton.disabled = false;
-            status.textContent = '';
-          }, 1500);
-        }).withFailureHandler(err => {
-          status.textContent = '❌ Errore';
-          saveButton.disabled = false;
-        }).salvaStatoFonti(newSources);
-      }
-
-      window.onclick = function(event) {
-        if (!event.target.closest('.dropdown-container') && !event.target.matches('.management-button')) {
-          const dropdown = document.getElementById('fonti-dropdown');
-          if (dropdown.classList.contains('show')) {
-            dropdown.classList.remove('show');
-          }
-        }
-      }
-
-      function escapeHtml(text) {
-        if (text === null || text === undefined) { return ''; }
-        var map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-        return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
-      }
-      
-      function updateDashboard() {
-        const refreshButton = document.getElementById('refresh-dashboard');
-        if(refreshButton) {
-          refreshButton.classList.add('loading');
-          refreshButton.disabled = true;
-        }
-
-        google.script.run
-          .withSuccessHandler(function(stats) {
-            document.getElementById('stat-notizie').innerText = stats.notizie;
-            document.getElementById('stat-post').innerText = stats.post;
-            document.getElementById('stat-immagini').innerText = stats.immagini;
-            document.getElementById('stat-esporta').innerText = stats.esporta;
-            if(refreshButton) {
-              refreshButton.classList.remove('loading');
-              refreshButton.disabled = false;
-            }
-          })
-          .withFailureHandler(function(err) {
-            document.getElementById('stat-notizie').innerText = '⚠️';
-            document.getElementById('stat-post').innerText = '⚠️';
-            document.getElementById('stat-immagini').innerText = '⚠️';
-            document.getElementById('stat-esporta').innerText = '⚠️';
-            if(refreshButton) {
-              refreshButton.classList.remove('loading');
-              refreshButton.disabled = false;
-            }
-          })
-          .getDashboardStats();
-      }
-
-      document.addEventListener('DOMContentLoaded', () => {
-        updateDashboard();
-        // Get the script URL once on page load
-        google.script.run.withSuccessHandler(url => { scriptBaseUrl = url; }).getScriptUrl();
-
-        // Listeners per il modal di anteprima
-        document.getElementById('preview-modal-close-btn').addEventListener('click', closePreviewModal);
-        document.getElementById('preview-modal').addEventListener('click', function(event) {
-            if (event.target === this) { // Chiudi solo se si clicca sull'overlay
-                closePreviewModal();
-            }
-        });
-
-        // Listener per i pulsanti nella tabella (principalmente per Anteprima)
-        document.getElementById('foglio-container').addEventListener('click', function(event) {
-            // Gestione pulsante Anteprima
-            const previewButton = event.target.closest('.preview-button');
-            if (previewButton) {
-                const data = previewButton.dataset;
-                openPreviewModal(
-                    data.titolo, 
-                    data.testo, 
-                    data.imageUrl, 
-                    data.dateValue, 
-                    data.timeValue, 
-                    data.rowNumber
-                );
-            }
-        });
-
-        // Listener per il pulsante "Programma" dentro il modal
-        document.getElementById('modal-schedule-button').addEventListener('click', function() {
-            const modal = document.getElementById('preview-modal');
-            const rowNumber = modal.dataset.rowNumber;
-            const dateValue = document.getElementById('modal-schedule-date').value;
-            const timeValue = document.getElementById('modal-schedule-time').value;
-            
-            const statusSpan = document.getElementById('modal-status');
-            const scheduleButton = document.getElementById('modal-schedule-button');
-
-            if (!rowNumber || !dateValue || !timeValue) {
-                statusSpan.innerText = 'Data e ora sono obbligatorie.';
-                statusSpan.style.color = 'red';
-                return;
-            }
-
-            statusSpan.innerText = 'Programmazione in corso...';
-            statusSpan.style.color = ''; // Reset color
-            scheduleButton.disabled = true;
-
-            // Chiamata alla nuova funzione server-side che creeremo
-            google.script.run
-                .withSuccessHandler(response => {
-                    statusSpan.innerText = '✅ ' + response;
-                    scheduleButton.disabled = false;
-                    setTimeout(() => {
-                        closePreviewModal();
-                        mostraFoglio('eseguiMostraFoglioInAttesa'); // Aggiorna la tabella
-                    }, 2000);
-                })
-                .withFailureHandler(error => {
-                    statusSpan.innerText = '❌ ' + error.message;
-                    scheduleButton.disabled = false;
-                })
-                .programmaPostDaModale(rowNumber, dateValue, timeValue);
-        });
-      });
-
-    /******************************************************************/
-    /******************      LOGICA EDITOR MODALE      ******************/
-    /******************************************************************/
-
-    let editorAbortController = new AbortController();
-
-    function openImageEditor(buttonElement) {
-      const imageUrl = buttonElement.getAttribute('data-image-url');
-      const postTitle = b64Decode(buttonElement.getAttribute('data-post-title'));
-      const postBody = b64Decode(buttonElement.getAttribute('data-post-body'));
-      
-      // Inizializza e mostra l\'editor
-      initImageEditor(imageUrl, postTitle, postBody);
-      document.getElementById('editor-modal-overlay').style.display = 'flex';
-    }
-
-    function closeImageEditor() {
-      document.getElementById('editor-modal-overlay').style.display = 'none';
-    }
-
-    function initImageEditor(imageUrl, postTitle, postBody) {
-      // Reset UI controls to their default values
-      document.getElementById('font-size').value = 50;
-      document.getElementById('line-height').value = 60;
-      document.getElementById('text-color').value = '#FFFFFF';
-      document.getElementById('font-weight').value = '700';
-      document.getElementById('font-style').value = 'normal';
-      document.getElementById('text-align').value = 'center';
-      document.getElementById('gradient-color').value = '#000000';
-      document.getElementById('gradient-opacity').value = '0.7';
-      document.getElementById('shadow-blur').value = '0';
-
-      // Annulla i listener precedenti per evitare duplicati
-      editorAbortController.abort();
-      editorAbortController = new AbortController();
-      const signal = editorAbortController.signal;
-
-      const canvas = document.getElementById('image-editor');
-      const ctx = canvas.getContext('2d');
-      const colorPicker = document.getElementById('gradient-color');
-      const opacitySlider = document.getElementById('gradient-opacity');
-      const textInput = document.getElementById('text-input');
-      const fontSizeInput = document.getElementById('font-size');
-      const textAlignInput = document.getElementById('text-align');
-      const fontWeightInput = document.getElementById('font-weight');
-      const fontStyleInput = document.getElementById('font-style');
-      const textColorInput = document.getElementById('text-color');
-      const shadowBlurInput = document.getElementById('shadow-blur');
-      const postBodyPreview = document.getElementById('post-body-preview');
-      const saveBtn = document.getElementById('save-btn');
-
-      let img = new Image();
-      let offsetX = 0, offsetY = 0, scale = 1, isDragging = false, startX, startY;
-      let gradientColor = '#000000', gradientOpacity = 0.7, fontSize = 50, textAlign = 'center', fontWeight = 700, fontStyle = 'normal', textColor = '#FFFFFF', shadowBlur = 0, lineHeight = 60;
-      let editablePostTitle = postTitle || '';
-
-      postBodyPreview.innerHTML = (postBody || '').replace(/\n/g, '<br>');
-      textInput.innerHTML = editablePostTitle;
-
-      img.crossOrigin = "Anonymous";
-      img.src = imageUrl;
-      img.onload = () => {
-          const canvasAspect = canvas.width / canvas.height;
-          const imgAspect = img.width / img.height;
-          if (imgAspect > canvasAspect) {
-              scale = canvas.height / img.height;
-              offsetX = (canvas.width - img.width * scale) / 2;
-              offsetY = 0;
-          } else {
-              scale = canvas.width / img.width;
-              offsetX = 0;
-              offsetY = (canvas.height - img.height * scale) / 2;
-          }
-          drawImage();
-      };
-
-      function hexToRgba(hex, opacity) {
-          hex = hex.replace('#', '');
-          const r = parseInt(hex.substring(0, 2), 16);
-          const g = parseInt(hex.substring(2, 4), 16);
-          const b = parseInt(hex.substring(4, 6), 16);
-          return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-      }
-
-      function drawImage() {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.fillStyle = '#000';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, offsetX, offsetY, img.width * scale, img.height * scale);
-
-          const gradient = ctx.createLinearGradient(0, canvas.height, 0, canvas.height / 2);
-          gradient.addColorStop(0, hexToRgba(gradientColor, gradientOpacity));
-          gradient.addColorStop(1, hexToRgba(gradientColor, 0));
-          ctx.fillStyle = gradient;
-          ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height);
-
-          ctx.fillStyle = textColor;
-          ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px Roboto, Arial, sans-serif`;
-          ctx.textAlign = textAlign;
-          ctx.textBaseline = 'bottom';
-          const maxWidth = canvas.width - 100;
-          // const lineHeight = 85; // Now a variable
-          
-          let x;
-          if (textAlign === 'left') x = 50;
-          else if (textAlign === 'right') x = canvas.width - 50;
-          else x = canvas.width / 2;
-
-          const y = canvas.height - 90;
-          ctx.shadowColor = 'black';
-          ctx.shadowBlur = shadowBlur;
-          ctx.shadowOffsetX = 2;
-          ctx.shadowOffsetY = 2;
-          wrapText(ctx, editablePostTitle, x, y, maxWidth, lineHeight);
-          ctx.shadowColor = 'transparent';
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
-      }
-
-      function wrapText(context, text, x, y, maxWidth, lineHeight) {
-          const textInput = document.getElementById('text-input');
-          let lines = [];
-          let currentLine = [];
-          let currentLineWidth = 0;
-
-          // --- PASS 1: Measure and create lines ---
-          function processNodeForMeasurement(node) {
-              if (node.nodeType === Node.TEXT_NODE) {
-                  const words = node.textContent.split(' ');
-                  words.forEach(word => {
-                      if (!word) return;
-                      
-                      let tempFont = `${fontStyle} ${fontWeight} ${fontSize}px Roboto, Arial, sans-serif`;
-                      let itemColor = textColor; // Default color
-                      let parent = node.parentNode;
-                      let isBold = false;
-                      let isItalic = false;
-
-                      while(parent && parent !== textInput) {
-                        const tagName = parent.tagName;
-                        if (tagName === 'B' || tagName === 'STRONG') isBold = true;
-                        if (tagName === 'I' || tagName === 'EM') isItalic = true;
-                        if (tagName === 'FONT' && parent.hasAttribute('color')) {
-                            itemColor = parent.getAttribute('color');
-                        }
-                        parent = parent.parentNode;
-                      }
-
-                      if(isBold) tempFont = `bold ${tempFont}`;
-                      if(isItalic) tempFont = `italic ${tempFont}`;
-
-                      context.font = tempFont;
-
-                      const upperWord = word.toUpperCase();
-                      const wordWidth = context.measureText(upperWord + ' ').width;
-
-                      if (currentLineWidth + wordWidth > maxWidth && currentLine.length > 0) {
-                          lines.push({ items: currentLine, width: currentLineWidth });
-                          currentLine = [];
-                          currentLineWidth = 0;
-                      }
-                      currentLine.push({ word: upperWord, font: context.font, color: itemColor, width: wordWidth });
-                      currentLineWidth += wordWidth;
-                  });
-              } else if (node.nodeType === Node.ELEMENT_NODE) {
-                  if (node.tagName === 'DIV' || node.tagName === 'P') {
-                      // Break line BEFORE processing the div's content
-                      if (currentLine.length > 0) {
-                          lines.push({ items: currentLine, width: currentLineWidth });
-                          currentLine = [];
-                          currentLineWidth = 0;
-                      }
-                      // Then process the content of the div
-                      node.childNodes.forEach(processNodeForMeasurement);
-                      // Break line AFTER processing the div's content
-                      if (currentLine.length > 0) {
-                          lines.push({ items: currentLine, width: currentLineWidth });
-                          currentLine = [];
-                          currentLineWidth = 0;
-                      }
-                  } else if (node.tagName === 'BR') {
-                      // Just break the line
-                      if (currentLine.length > 0) {
-                          lines.push({ items: currentLine, width: currentLineWidth });
-                          currentLine = [];
-                          currentLineWidth = 0;
-                      }
-                  } else {
-                      // For other inline tags like B, I, FONT
-                      node.childNodes.forEach(processNodeForMeasurement);
-                  }
-              }
-          }
-
-          textInput.childNodes.forEach(processNodeForMeasurement);
-          if (currentLine.length > 0) {
-              lines.push({ items: currentLine, width: currentLineWidth });
-          }
-
-          // --- PASS 2: Draw the lines ---
-          context.textAlign = 'left';
-          let currentY = y - (lines.length - 1) * lineHeight;
-
-          lines.forEach(line => {
-              let currentX;
-              if (textAlign === 'center') {
-                  currentX = x - (line.width / 2);
-              } else if (textAlign === 'right') {
-                  currentX = x - line.width;
-              } else { // left
-                  currentX = x;
-              }
-
-              line.items.forEach(item => {
-                  context.font = item.font;
-                  context.fillStyle = item.color; // Set color for this item
-                  context.fillText(item.word, currentX, currentY);
-                  currentX += item.width;
-              });
-              currentY += lineHeight;
-          });
-          
-          // Reset fillStyle to default after drawing
-          context.fillStyle = textColor;
-      }
-
-        colorPicker.addEventListener('input', (e) => { gradientColor = e.target.value; drawImage(); }, { signal });
-        opacitySlider.addEventListener('input', (e) => { gradientOpacity = parseFloat(e.target.value); drawImage(); }, { signal });
-        textInput.addEventListener('input', (e) => { editablePostTitle = e.target.innerHTML; drawImage(); }, { signal });
-        fontSizeInput.addEventListener('input', (e) => { fontSize = parseInt(e.target.value, 10); drawImage(); }, { signal });
-        document.getElementById('line-height').addEventListener('input', (e) => { lineHeight = parseInt(e.target.value, 10); drawImage(); }, { signal });
-        textAlignInput.addEventListener('input', (e) => { textAlign = e.target.value; drawImage(); }, { signal });
-        fontWeightInput.addEventListener('input', (e) => { fontWeight = parseInt(e.target.value, 10); drawImage(); }, { signal });
-        fontStyleInput.addEventListener('input', (e) => { fontStyle = e.target.value; drawImage(); }, { signal });
-        textColorInput.addEventListener('input', (e) => { textColor = e.target.value; drawImage(); }, { signal });
-        shadowBlurInput.addEventListener('input', (e) => { shadowBlur = parseInt(e.target.value, 10); drawImage(); }, { signal });
-
-        document.getElementById('modal-close-btn').addEventListener('click', closeImageEditor, { signal });
-
-        saveBtn.addEventListener('click', () => {
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'Salvataggio...';
-            const imageData = canvas.toDataURL('image/png');
-            const finalTitle = textInput.innerHTML;
-            const finalBody = postBody;
-
-            google.script.run
-              .withSuccessHandler((response) => {
-                  alert(response);
-                  closeImageEditor();
-                  mostraFoglio('eseguiMostraFoglioInAttesa'); // Refresh the list
-              })
-              .withFailureHandler((error) => {
-                  alert("Errore: " + error.message);
-                  saveBtn.disabled = false;
-                  saveBtn.textContent = 'Salva';
-              })
-              ._salvaImmagineEPostInAttesa(imageData, finalTitle, finalBody);
-        }, { signal });
-
-        function getCanvasCoordinates(e) {
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.clientX || e.touches[0].clientX;
-            const clientY = e.clientY || e.touches[0].clientY;
-            const canvasX = clientX - rect.left;
-            const canvasY = clientY - rect.top;
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            return { x: canvasX * scaleX, y: canvasY * scaleY };
-        }
-
-        function onDragStart(e) { isDragging = true; const coords = getCanvasCoordinates(e); startX = coords.x - offsetX; startY = coords.y - offsetY; canvas.style.cursor = 'grabbing'; } 
-        function onDragEnd() { isDragging = false; canvas.style.cursor = 'grab'; }
-        function onDrag(e) { if (!isDragging) return; const coords = getCanvasCoordinates(e); handleMove(coords.x, coords.y); }
-
-        canvas.addEventListener('mousedown', onDragStart, { signal });
-        canvas.addEventListener('mouseup', onDragEnd, { signal });
-        canvas.addEventListener('mouseleave', onDragEnd, { signal });
-        canvas.addEventListener('mousemove', onDrag, { signal });
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onDragStart(e); }, { signal });
-        canvas.addEventListener('touchend', (e) => { e.preventDefault(); onDragEnd(e); }, { signal });
-        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); onDrag(e); }, { signal });
-
-        function handleMove(currentX, currentY) {
-            const newOffsetX = currentX - startX;
-            const newOffsetY = currentY - startY;
-            const maxOffsetX = 0;
-            const minOffsetX = canvas.width - img.width * scale;
-            const maxOffsetY = 0;
-            const minOffsetY = canvas.height - img.height * scale;
-            offsetX = Math.max(minOffsetX, Math.min(newOffsetX, maxOffsetX));
-            offsetY = Math.max(minOffsetY, Math.min(newOffsetY, maxOffsetY));
-            drawImage();
-        }
-    }
-
-
-    </script>
-  </body>
-</html>
+    
+        <script src="scripts.js"></script>
+      </body>
+    </html>
